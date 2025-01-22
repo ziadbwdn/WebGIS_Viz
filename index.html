@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard WebGIS</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+   <!-- Link ke file CSS -->
+   <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100 font-sans">
+     <!-- Navbar -->
+    <nav class="navbar">
+    <div class="logo">Dashboard Web GIS dan Visualisasi Perolehan Suara Parpol Dapil Provinsi Bali Pemilu Indonesa 2024</div>
+    <div class="menu-toggle" onclick="toggleMenu()">&#9776;</div>
+    <ul class="menu">
+        <li><a href="https://github.com/ziadbwdn/WebGIS_Viz/">Home</a></li>
+        <li><a href="https://ziadbwdn.github.io/WebGIS_Map/">See Fullscreen Map</a></li>
+        <li><a href="https://www.linkedin.com/in/ziyadbwdn/">Contact</a></li>
+    </ul>
+    </nav>
+    <!-- Main Content -->
+    <div class="container mx-auto mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Peta -->
+    <div class="bg-white p-4 shadow rounded">
+      <h2 class="text-lg font-semibold mb-4">Peta Interaktif</h2>
+      <iframe src="https://ziadbwdn.github.io/WebGIS_Map/" class="w-full h-80 border rounded" allowfullscreen></iframe>
+    </div>
+
+    <!-- Diagram -->
+    <div class="bg-white p-4 shadow rounded">
+        <h2 class="text-lg font-semibold mb-4">Diagram Infografis</h2>
+        <!-- <canvas id="chart" class="w-full h-80"></canvas> -->
+        <!-- <h2 style="text-align: center;">Total Suara Partai per Kabupaten/Kota</h2> -->
+        <canvas id="stackedBarChart" width="900" height="500"></canvas>
+    </div>
+
+    <script>
+        // Labels untuk sumbu X (Kabupaten/Kota)
+        const labels = ["Jembrana", "Tabanan", "Badung", "Gianyar", "Klungkung", "Bangli", "Karangasem", "Buleleng", "Denpasar"];
+    
+        // Data suara partai per kabupaten/kota
+        const dataPartai = {
+            "PKB": [8644, 2257, 4203, 1532, 1483, 1315, 3575, 11603, 7016],
+            "Gerindra": [19713, 27850, 31318, 22949, 26485, 11772, 45829, 45337, 64060],
+            "PDIP": [63306, 234166, 180481, 247811, 53559, 91340, 113400, 152917, 153904],
+            "Golkar": [21767, 26011, 59825, 22088, 12408, 22898, 45970, 80772, 41782],
+            "NasDem": [16412, 7407, 11129, 7764, 4244, 8029, 27143, 51590, 13960],
+            "Partai Buruh": [708, 638, 956, 659, 817, 695, 1306, 1566, 1700],
+            "Partai Gelora": [1384, 1227, 2057, 807, 890, 834, 3264, 3954, 9314],
+            "PKS": [1373, 1039, 2216, 402, 511, 294, 2445, 3166, 7699],
+            "PKN": [3085, 1650, 2368, 1182, 1259, 1325, 4621, 3923, 4268],
+            "Hanura": [378, 326, 825, 306, 2584, 279, 1190, 3385, 578],
+            "Partai Garuda": [327, 342, 419, 284, 284, 307, 880, 924, 833],
+            "PAN": [780, 340, 611, 332, 256, 239, 479, 1724, 1922],
+            "PBB": [221, 199, 236, 94, 63, 80, 254, 276, 382],
+            "Partai Demokrat": [29113, 3538, 12369, 17340, 9884, 8840, 28173, 44650, 20569],
+            "PSI": [3823, 3511, 10544, 4590, 3103, 1483, 4328, 6148, 23192],
+            "Partai Perindo": [387, 494, 1498, 1552, 664, 254, 1343, 1112, 3227],
+            "PPP": [1610, 290, 302, 138, 147, 138, 363, 1506, 738],
+            "Partai Ummat": [228, 119, 210, 95, 80, 114, 261, 400, 653]
+        };
+    
+        // Warna khusus untuk setiap partai
+        const partaiColors = {
+            "PKB": "darkgreen",
+            "Gerindra": "darkorange",
+            "PDIP": "red",
+            "Golkar": "yellow",
+            "NasDem": "darkblue",
+            "Partai Buruh": "lightorange",
+            "Partai Gelora": "lightblue",
+            "PKS": "orange",
+            "PKN": "darkred",
+            "Hanura": "lightcoral",
+            "Partai Garuda": "maroon",
+            "PAN": "darkblue",
+            "PBB": "lightgreen",
+            "Partai Demokrat": "darkblue",
+            "PSI": "red",
+            "Partai Perindo": "blue",
+            "PPP": "green",
+            "Partai Ummat": "gold"
+        };
+    
+        // Menyiapkan dataset
+        const datasets = Object.keys(dataPartai).map(partai => ({
+            label: partai,
+            data: dataPartai[partai],
+            backgroundColor: partaiColors[partai],
+            borderColor: partaiColors[partai],
+            borderWidth: 1
+        }));
+    
+        // Membuat grafik
+        const ctx = document.getElementById('stackedBarChart').getContext('2d');
+        const stackedBarChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                },
+                scales: {
+                    x: {
+                        stacked: true // Mengaktifkan stack pada sumbu X
+                    },
+                    y: {
+                        stacked: true, // Mengaktifkan stack pada sumbu Y
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+  </div>
+
+<!-- Tabel -->
+<div class="container mx-auto mt-6 bg-white p-4 shadow rounded">
+    <h2 class="text-lg font-semibold mb-4">Data Tabel</h2>
+    <div class="overflow-y-auto h-80 border rounded"> <!-- Kontainer dengan scroll -->
+      <table class="table-auto w-full border">
+        <thead class="bg-white-200">
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Kabupaten/Kota</td>
+            <td class="px-4 py-2 border border-gray-300">Jembrana</td>
+            <td class="px-4 py-2 border border-gray-300">Tabanan</td>
+            <td class="px-4 py-2 border border-gray-300">Badung</td>
+            <td class="px-4 py-2 border border-gray-300">Gianyar</td>
+            <td class="px-4 py-2 border border-gray-300">Klungkung</td>
+            <td class="px-4 py-2 border border-gray-300">Bangli</td>
+            <td class="px-4 py-2 border border-gray-300">Karangasem</td>
+            <td class="px-4 py-2 border border-gray-300">Buleleng</td>
+            <td class="px-4 py-2 border border-gray-300">Denpasar</td>
+            <td class="px-4 py-2 border border-gray-300">Total Suara</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Kebangkitan Bangsa</td>
+            <td class="px-4 py-2 border border-gray-300">8644</td>
+            <td class="px-4 py-2 border border-gray-300">2257</td>
+            <td class="px-4 py-2 border border-gray-300">4203</td>
+            <td class="px-4 py-2 border border-gray-300">1532</td>
+            <td class="px-4 py-2 border border-gray-300">1483</td>
+            <td class="px-4 py-2 border border-gray-300">1315</td>
+            <td class="px-4 py-2 border border-gray-300">3575</td>
+            <td class="px-4 py-2 border border-gray-300">11603</td>
+            <td class="px-4 py-2 border border-gray-300">7016</td>
+            <td class="px-4 py-2 border border-gray-300">41628</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Gerakan Indonesia Raya</td>
+            <td class="px-4 py-2 border border-gray-300">19713</td>
+            <td class="px-4 py-2 border border-gray-300">27850</td>
+            <td class="px-4 py-2 border border-gray-300">31318</td>
+            <td class="px-4 py-2 border border-gray-300">22949</td>
+            <td class="px-4 py-2 border border-gray-300">26485</td>
+            <td class="px-4 py-2 border border-gray-300">11772</td>
+            <td class="px-4 py-2 border border-gray-300">45829</td>
+            <td class="px-4 py-2 border border-gray-300">45337</td>
+            <td class="px-4 py-2 border border-gray-300">64060</td>
+            <td class="px-4 py-2 border border-gray-300">295313</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Demokrasi Indonesia Perjuangan</td>
+            <td class="px-4 py-2 border border-gray-300">63306</td>
+            <td class="px-4 py-2 border border-gray-300">234166</td>
+            <td class="px-4 py-2 border border-gray-300">180481</td>
+            <td class="px-4 py-2 border border-gray-300">247811</td>
+            <td class="px-4 py-2 border border-gray-300">53559</td>
+            <td class="px-4 py-2 border border-gray-300">91340</td>
+            <td class="px-4 py-2 border border-gray-300">113400</td>
+            <td class="px-4 py-2 border border-gray-300">152917</td>
+            <td class="px-4 py-2 border border-gray-300">153904</td>
+            <td class="px-4 py-2 border border-gray-300">1290884</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Golongan Karya</td>
+            <td class="px-4 py-2 border border-gray-300">21767</td>
+            <td class="px-4 py-2 border border-gray-300">26011</td>
+            <td class="px-4 py-2 border border-gray-300">59825</td>
+            <td class="px-4 py-2 border border-gray-300">22088</td>
+            <td class="px-4 py-2 border border-gray-300">12408</td>
+            <td class="px-4 py-2 border border-gray-300">22898</td>
+            <td class="px-4 py-2 border border-gray-300">45970</td>
+            <td class="px-4 py-2 border border-gray-300">80772</td>
+            <td class="px-4 py-2 border border-gray-300">41782</td>
+            <td class="px-4 py-2 border border-gray-300">333521</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai NasDem</td>
+            <td class="px-4 py-2 border border-gray-300">16412</td>
+            <td class="px-4 py-2 border border-gray-300">7407</td>
+            <td class="px-4 py-2 border border-gray-300">11129</td>
+            <td class="px-4 py-2 border border-gray-300">7764</td>
+            <td class="px-4 py-2 border border-gray-300">4244</td>
+            <td class="px-4 py-2 border border-gray-300">8029</td>
+            <td class="px-4 py-2 border border-gray-300">27143</td>
+            <td class="px-4 py-2 border border-gray-300">51590</td>
+            <td class="px-4 py-2 border border-gray-300">13960</td>
+            <td class="px-4 py-2 border border-gray-300">147678</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Buruh</td>
+            <td class="px-4 py-2 border border-gray-300">708</td>
+            <td class="px-4 py-2 border border-gray-300">638</td>
+            <td class="px-4 py-2 border border-gray-300">956</td>
+            <td class="px-4 py-2 border border-gray-300">659</td>
+            <td class="px-4 py-2 border border-gray-300">817</td>
+            <td class="px-4 py-2 border border-gray-300">695</td>
+            <td class="px-4 py-2 border border-gray-300">1306</td>
+            <td class="px-4 py-2 border border-gray-300">1566</td>
+            <td class="px-4 py-2 border border-gray-300">1700</td>
+            <td class="px-4 py-2 border border-gray-300">9045</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Gelombang Rakyat Indonesia</td>
+            <td class="px-4 py-2 border border-gray-300">1384</td>
+            <td class="px-4 py-2 border border-gray-300">1227</td>
+            <td class="px-4 py-2 border border-gray-300">2057</td>
+            <td class="px-4 py-2 border border-gray-300">807</td>
+            <td class="px-4 py-2 border border-gray-300">890</td>
+            <td class="px-4 py-2 border border-gray-300">834</td>
+            <td class="px-4 py-2 border border-gray-300">3264</td>
+            <td class="px-4 py-2 border border-gray-300">3954</td>
+            <td class="px-4 py-2 border border-gray-300">9314</td>
+            <td class="px-4 py-2 border border-gray-300">23731</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Keadilan Sejahtera</td>
+            <td class="px-4 py-2 border border-gray-300">1373</td>
+            <td class="px-4 py-2 border border-gray-300">1039</td>
+            <td class="px-4 py-2 border border-gray-300">2216</td>
+            <td class="px-4 py-2 border border-gray-300">402</td>
+            <td class="px-4 py-2 border border-gray-300">511</td>
+            <td class="px-4 py-2 border border-gray-300">294</td>
+            <td class="px-4 py-2 border border-gray-300">2445</td>
+            <td class="px-4 py-2 border border-gray-300">3166</td>
+            <td class="px-4 py-2 border border-gray-300">7699</td>
+            <td class="px-4 py-2 border border-gray-300">19145</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Kebangkitan Nusantara</td>
+            <td class="px-4 py-2 border border-gray-300">3085</td>
+            <td class="px-4 py-2 border border-gray-300">1650</td>
+            <td class="px-4 py-2 border border-gray-300">2368</td>
+            <td class="px-4 py-2 border border-gray-300">1182</td>
+            <td class="px-4 py-2 border border-gray-300">1259</td>
+            <td class="px-4 py-2 border border-gray-300">1325</td>
+            <td class="px-4 py-2 border border-gray-300">4621</td>
+            <td class="px-4 py-2 border border-gray-300">3923</td>
+            <td class="px-4 py-2 border border-gray-300">4268</td>
+            <td class="px-4 py-2 border border-gray-300">23681</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Hati Nurani Rakyat</td>
+            <td class="px-4 py-2 border border-gray-300">378</td>
+            <td class="px-4 py-2 border border-gray-300">326</td>
+            <td class="px-4 py-2 border border-gray-300">825</td>
+            <td class="px-4 py-2 border border-gray-300">306</td>
+            <td class="px-4 py-2 border border-gray-300">2584</td>
+            <td class="px-4 py-2 border border-gray-300">279</td>
+            <td class="px-4 py-2 border border-gray-300">1190</td>
+            <td class="px-4 py-2 border border-gray-300">3385</td>
+            <td class="px-4 py-2 border border-gray-300">578</td>
+            <td class="px-4 py-2 border border-gray-300">9851</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Garda Republik Indonesia</td>
+            <td class="px-4 py-2 border border-gray-300">327</td>
+            <td class="px-4 py-2 border border-gray-300">342</td>
+            <td class="px-4 py-2 border border-gray-300">419</td>
+            <td class="px-4 py-2 border border-gray-300">284</td>
+            <td class="px-4 py-2 border border-gray-300">284</td>
+            <td class="px-4 py-2 border border-gray-300">307</td>
+            <td class="px-4 py-2 border border-gray-300">880</td>
+            <td class="px-4 py-2 border border-gray-300">924</td>
+            <td class="px-4 py-2 border border-gray-300">833</td>
+            <td class="px-4 py-2 border border-gray-300">4600</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Amanat Nasional</td>
+            <td class="px-4 py-2 border border-gray-300">780</td>
+            <td class="px-4 py-2 border border-gray-300">340</td>
+            <td class="px-4 py-2 border border-gray-300">611</td>
+            <td class="px-4 py-2 border border-gray-300">332</td>
+            <td class="px-4 py-2 border border-gray-300">256</td>
+            <td class="px-4 py-2 border border-gray-300">239</td>
+            <td class="px-4 py-2 border border-gray-300">479</td>
+            <td class="px-4 py-2 border border-gray-300">1724</td>
+            <td class="px-4 py-2 border border-gray-300">1922</td>
+            <td class="px-4 py-2 border border-gray-300">6683</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Bulan Bintang</td>
+            <td class="px-4 py-2 border border-gray-300">221</td>
+            <td class="px-4 py-2 border border-gray-300">199</td>
+            <td class="px-4 py-2 border border-gray-300">236</td>
+            <td class="px-4 py-2 border border-gray-300">94</td>
+            <td class="px-4 py-2 border border-gray-300">63</td>
+            <td class="px-4 py-2 border border-gray-300">80</td>
+            <td class="px-4 py-2 border border-gray-300">254</td>
+            <td class="px-4 py-2 border border-gray-300">276</td>
+            <td class="px-4 py-2 border border-gray-300">382</td>
+            <td class="px-4 py-2 border border-gray-300">1805</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Demokrat</td>
+            <td class="px-4 py-2 border border-gray-300">29113</td>
+            <td class="px-4 py-2 border border-gray-300">3538</td>
+            <td class="px-4 py-2 border border-gray-300">12369</td>
+            <td class="px-4 py-2 border border-gray-300">17340</td>
+            <td class="px-4 py-2 border border-gray-300">9884</td>
+            <td class="px-4 py-2 border border-gray-300">8840</td>
+            <td class="px-4 py-2 border border-gray-300">28173</td>
+            <td class="px-4 py-2 border border-gray-300">44650</td>
+            <td class="px-4 py-2 border border-gray-300">20569</td>
+            <td class="px-4 py-2 border border-gray-300">174476</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Solidaritas Indonesia</td>
+            <td class="px-4 py-2 border border-gray-300">3823</td>
+            <td class="px-4 py-2 border border-gray-300">3511</td>
+            <td class="px-4 py-2 border border-gray-300">10544</td>
+            <td class="px-4 py-2 border border-gray-300">4590</td>
+            <td class="px-4 py-2 border border-gray-300">3103</td>
+            <td class="px-4 py-2 border border-gray-300">1483</td>
+            <td class="px-4 py-2 border border-gray-300">4328</td>
+            <td class="px-4 py-2 border border-gray-300">6148</td>
+            <td class="px-4 py-2 border border-gray-300">23192</td>
+            <td class="px-4 py-2 border border-gray-300">60722</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Perindo</td>
+            <td class="px-4 py-2 border border-gray-300">387</td>
+            <td class="px-4 py-2 border border-gray-300">494</td>
+            <td class="px-4 py-2 border border-gray-300">1498</td>
+            <td class="px-4 py-2 border border-gray-300">1552</td>
+            <td class="px-4 py-2 border border-gray-300">664</td>
+            <td class="px-4 py-2 border border-gray-300">254</td>
+            <td class="px-4 py-2 border border-gray-300">1343</td>
+            <td class="px-4 py-2 border border-gray-300">1112</td>
+            <td class="px-4 py-2 border border-gray-300">3227</td>
+            <td class="px-4 py-2 border border-gray-300">10531</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Persatuan Pembangunan</td>
+            <td class="px-4 py-2 border border-gray-300">1610</td>
+            <td class="px-4 py-2 border border-gray-300">290</td>
+            <td class="px-4 py-2 border border-gray-300">302</td>
+            <td class="px-4 py-2 border border-gray-300">138</td>
+            <td class="px-4 py-2 border border-gray-300">147</td>
+            <td class="px-4 py-2 border border-gray-300">138</td>
+            <td class="px-4 py-2 border border-gray-300">363</td>
+            <td class="px-4 py-2 border border-gray-300">1506</td>
+            <td class="px-4 py-2 border border-gray-300">738</td>
+            <td class="px-4 py-2 border border-gray-300">5232</td>
+        </tr>
+        <tr>
+            <td class="px-4 py-2 border border-gray-300">Partai Ummat</td>
+            <td class="px-4 py-2 border border-gray-300">228</td>
+            <td class="px-4 py-2 border border-gray-300">119</td>
+            <td class="px-4 py-2 border border-gray-300">210</td>
+            <td class="px-4 py-2 border border-gray-300">95</td>
+            <td class="px-4 py-2 border border-gray-300">80</td>
+            <td class="px-4 py-2 border border-gray-300">114</td>
+            <td class="px-4 py-2 border border-gray-300">261</td>
+            <td class="px-4 py-2 border border-gray-300">400</td>
+            <td class="px-4 py-2 border border-gray-300">653</td>
+            <td class="px-4 py-2 border border-gray-300">2160</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+
+</body>
+</html>
